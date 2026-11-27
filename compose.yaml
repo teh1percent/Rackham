@@ -29,6 +29,9 @@ services:
       # Must be the same path on both sides: the stack Rackham writes uses
       # paths that the host has to understand.
       - ${STACK_DIR:-/opt/rackham}:${STACK_DIR:-/opt/rackham}
+      # Optional: mount your media folder or share anywhere inside the container
+      # and the folder picker lists it first and browses it instantly, e.g.
+      # - /mnt/user/data:/media
     security_opt:
       # Needed on SELinux hosts (Fedora, CoreOS, RHEL) to reach the Docker
       # socket. Has no effect elsewhere.

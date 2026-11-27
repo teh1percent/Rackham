@@ -151,7 +151,7 @@ function viewSettings() {
         <span class="hint">A folder on the server. Downloads and your library both live here. Type a new name to have it created.</span>
       </label>
       ${field('Timezone', 'settings.tz')}
-      ${field('User ID', 'settings.puid', { type: 'number', hint: 'Run <code>id</code> on the server' })}
+      ${field('User ID', 'settings.puid', { type: 'number', hint: state.info.rootless ? 'This server runs rootless Docker, where 0 means the account Docker runs as. Keep both at 0 so the apps can write to your folders.' : 'Run <code>id</code> on the server' })}
       ${field('Group ID', 'settings.pgid', { type: 'number' })}
     </div>`)}
 
@@ -197,10 +197,12 @@ async function browseTo(target) {
     const r = await api(`/api/browse?path=${encodeURIComponent(target)}`);
     if (turn !== browser.shown) return;
     browser.path = r.path;
-    $('#b-path').textContent = r.path;
+    $('#b-path').textContent = r.places ? 'Start from one of these' : r.path;
+    $('[data-b-use]').disabled = !!r.places;
     const rows = [];
-    if (r.parent) rows.push(`<li><button type="button" class="b-row up" data-b-go="${esc(r.parent)}">${UP}Up one level</button></li>`);
-    for (const d of r.dirs) rows.push(`<li><button type="button" class="b-row" data-b-go="${esc(d.path)}">${FOLDER}${esc(d.name)}</button></li>`);
+    // An empty parent means "back to the starting list".
+    if (r.parent !== null && r.parent !== undefined) rows.push(`<li><button type="button" class="b-row up" data-b-go="${esc(r.parent)}">${UP}${r.parent === '' ? 'Back to the start' : 'Up one level'}</button></li>`);
+    for (const d of r.dirs) rows.push(`<li><button type="button" class="b-row" data-b-go="${esc(d.path)}">${FOLDER}<span>${esc(d.name)}${d.note ? `<small>${esc(d.note)}</small>` : ''}</span></button></li>`);
     if (!r.dirs.length) rows.push('<li class="b-note">No folders in here. You can still use this one.</li>');
     $('#b-list').innerHTML = rows.join('');
     $('#b-list').scrollTop = 0;
@@ -323,7 +325,7 @@ document.addEventListener('click', async (e) => {
   if (!t) return;
   if (t.dataset.app) return toggle(t.dataset.app);
   if ('browse' in t.dataset) return openBrowser();
-  if (t.dataset.bGo) return browseTo(t.dataset.bGo);
+  if ('bGo' in t.dataset) return browseTo(t.dataset.bGo);
   if ('bCancel' in t.dataset) return $('#browser').close();
   if ('bUse' in t.dataset) {
     if (browser.path) state.settings.dataRoot = browser.path;
@@ -357,6 +359,7 @@ document.addEventListener('input', (e) => {
 
 state.info = await api('/api/info');
 state.settings.tz = state.info.timezone || 'Etc/UTC';
+if (state.info.rootless) { state.settings.puid = 0; state.settings.pgid = 0; }
 if (state.info.job) {
   state.job = state.info.job;
   state.services = new Set(state.job.steps.filter((s) => s.service).map((s) => s.service));

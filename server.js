@@ -35,7 +35,7 @@ function readJson(req) {
 const routes = {
   'GET /api/info': async () => ({
     catalog: publicCatalog(),
-    docker: (await dockerInfo()).available,
+    ...(await dockerInfo().then((d) => ({ docker: d.available, rootless: d.rootless }))),
     inContainer,
     stackDir: STACK_DIR,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -64,7 +64,7 @@ const routes = {
   'GET /api/job': async () => (job ? publicJob(job) : null),
 
   // Folder names only, for the folder picker. Never file names or contents.
-  'GET /api/browse': async (req, url) => browse(url.searchParams.get('path') || ''),
+  'GET /api/browse': async (req, url) => browse(url.searchParams.get('path') || '', STACK_DIR),
 };
 
 const server = http.createServer(async (req, res) => {
