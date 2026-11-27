@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { publicCatalog } from './lib/catalog.js';
 import { normalize, buildCompose, buildEnv } from './lib/compose.js';
 import { newKey, tracearrSecrets } from './lib/seed.js';
-import { createJob, publicJob, dockerInfo, manualSteps, inContainer } from './lib/deploy.js';
+import { createJob, publicJob, dockerInfo, manualSteps, inContainer, browse } from './lib/deploy.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(here, 'public');
@@ -62,6 +62,9 @@ const routes = {
   },
 
   'GET /api/job': async () => (job ? publicJob(job) : null),
+
+  // Folder names only, for the folder picker. Never file names or contents.
+  'GET /api/browse': async (req, url) => browse(url.searchParams.get('path') || ''),
 };
 
 const server = http.createServer(async (req, res) => {
@@ -70,7 +73,7 @@ const server = http.createServer(async (req, res) => {
   if (route) {
     // Changes must come from this page, not from another site open in the same browser.
     if (req.method === 'POST' && req.headers.origin && new URL(req.headers.origin).host !== req.headers.host) return send(res, 403, { error: 'Cross-site request refused.' });
-    try { return send(res, 200, await route(req)); } catch (e) { return send(res, 400, { error: e.message }); }
+    try { return send(res, 200, await route(req, url)); } catch (e) { return send(res, 400, { error: e.message }); }
   }
   if (req.method !== 'GET') return send(res, 404, { error: 'Not found.' });
 

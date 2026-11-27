@@ -13,7 +13,9 @@ const LOOK = {
   sonarr: { c: '#35c5f4' }, radarr: { c: '#ffc230' }, prowlarr: { c: '#f0733a' }, sabnzbd: { c: '#f5c518' },
   seerr: { c: '#8b7bff', icon: 'overseerr' }, wizarr: { c: '#ef6b6b' },
 };
-const ICONS = 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/';
+const FOLDER = '<svg class="glyph" viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5.5a2 2 0 0 1 2-2h3l2 2h6a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z"/></svg>';
+const UP = '<svg class="glyph line" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15.5v-11M5 9l5-5 5 5"/></svg>';
+const ICONS ='https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/';
 
 const state = {
   step: 0,
@@ -141,7 +143,13 @@ function viewSettings() {
     <p class="lead">Anything you leave blank is skipped, and you can fill it in later inside the app.</p>
 
     ${card('Server', `<div class="fields">
-      ${field('Media and downloads folder', 'settings.dataRoot', { wide: true, hint: 'A path on the server, for example /mnt/user/data. Downloads and your library both live here.' })}
+      <label class="wide">Media and downloads folder
+        <span class="with-btn">
+          <input type="text" data-bind="settings.dataRoot" value="${esc(state.settings.dataRoot)}">
+          <button type="button" class="btn" data-browse>${FOLDER}Browse</button>
+        </span>
+        <span class="hint">A folder on the server. Downloads and your library both live here. Type a new name to have it created.</span>
+      </label>
       ${field('Timezone', 'settings.tz')}
       ${field('User ID', 'settings.puid', { type: 'number', hint: 'Run <code>id</code> on the server' })}
       ${field('Group ID', 'settings.pgid', { type: 'number' })}
@@ -175,6 +183,42 @@ function viewSettings() {
     ${has('plex') ? card('Plex', `<div class="fields">
       ${field('Claim token', 'plexClaim', { wide: true, hint: 'Get one at <a href="https://plex.tv/claim" target="_blank" rel="noopener">plex.tv/claim</a> just before you deploy. It expires after 4 minutes.' })}
     </div>`, 'Links the new server to your Plex account.') : ''}`;
+}
+
+// ---------- folder picker ----------
+
+const browser = { path: '', shown: 0 };
+
+async function browseTo(target) {
+  const turn = ++browser.shown; // ignore answers that arrive after a newer click
+  $('#b-error').hidden = true;
+  $('#b-list').innerHTML = '<li class="b-note">Looking…</li>';
+  try {
+    const r = await api(`/api/browse?path=${encodeURIComponent(target)}`);
+    if (turn !== browser.shown) return;
+    browser.path = r.path;
+    $('#b-path').textContent = r.path;
+    const rows = [];
+    if (r.parent) rows.push(`<li><button type="button" class="b-row up" data-b-go="${esc(r.parent)}">${UP}Up one level</button></li>`);
+    for (const d of r.dirs) rows.push(`<li><button type="button" class="b-row" data-b-go="${esc(d.path)}">${FOLDER}${esc(d.name)}</button></li>`);
+    if (!r.dirs.length) rows.push('<li class="b-note">No folders in here. You can still use this one.</li>');
+    $('#b-list').innerHTML = rows.join('');
+    $('#b-list').scrollTop = 0;
+  } catch (err) {
+    if (turn !== browser.shown) return;
+    // A typed path that doesn't exist yet: start from the top instead.
+    if (target) return browseTo('');
+    $('#b-list').innerHTML = '';
+    $('#b-error').textContent = err.message;
+    $('#b-error').hidden = false;
+  }
+}
+
+function openBrowser() {
+  const current = state.settings.dataRoot.trim();
+  $('#b-path').textContent = '';
+  $('#browser').showModal();
+  browseTo(/^(\/|[A-Za-z]:[\\/])/.test(current) ? current : '');
 }
 
 function download(name, textContent) {
@@ -278,6 +322,14 @@ document.addEventListener('click', async (e) => {
   const t = e.target.closest('button');
   if (!t) return;
   if (t.dataset.app) return toggle(t.dataset.app);
+  if ('browse' in t.dataset) return openBrowser();
+  if (t.dataset.bGo) return browseTo(t.dataset.bGo);
+  if ('bCancel' in t.dataset) return $('#browser').close();
+  if ('bUse' in t.dataset) {
+    if (browser.path) state.settings.dataRoot = browser.path;
+    $('#browser').close();
+    return render();
+  }
   if ('addIx' in t.dataset) { state.indexers.push({ name: '', url: '', apiKey: '' }); return render(); }
   if (t.dataset.removeIx) {
     state.indexers.splice(Number(t.dataset.removeIx), 1);
