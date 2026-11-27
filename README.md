@@ -32,11 +32,11 @@ needs `--security-opt label=disable` to reach the Docker socket.
 
 ## Run it on the server (recommended)
 
-The quickest way is the included `compose.yaml`, which builds Rackham straight
-from this repository. Save that one file on the server and run:
+The quickest way is the included `compose.yaml`, which uses the published image
+`ghcr.io/teh1percent/rackham:latest`. Save that one file on the server and run:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 Then open `http://<server>:8099`. The stack is written to `/opt/rackham` unless

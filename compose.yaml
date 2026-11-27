@@ -1,13 +1,13 @@
 # Runs Rackham itself. Save this file on your server, then:
 #
-#   docker compose up -d --build
+#   docker compose up -d
 #
 # and open http://<server>:8099
 #
 # Rackham writes the media stack (compose file, .env and app settings) into
 # STACK_DIR. To use a different folder, set STACK_DIR before starting, e.g.
 #
-#   STACK_DIR=/mnt/user/appdata/rackham docker compose up -d --build
+#   STACK_DIR=/mnt/user/appdata/rackham docker compose up -d
 #
 # Rackham has no login and controls Docker: run it on a network you trust and
 # stop it when setup is done (docker compose down).
@@ -16,10 +16,8 @@ name: rackham
 
 services:
   rackham:
-    # Builds straight from GitHub, so this one file is all you need.
-    # If you cloned the repository, you can use "build: ." instead.
-    build: https://github.com/teh1percent/Rackham.git#main
-    image: rackham:latest
+    # Published from this repository on every push to main.
+    image: ghcr.io/teh1percent/rackham:latest
     container_name: rackham
     ports:
       - "8099:8099"
