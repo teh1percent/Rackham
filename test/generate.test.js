@@ -117,6 +117,14 @@ test('SELinux hosts get labelling turned off for apps that mount host folders', 
   assert.equal(yaml.match(/security_opt:\n      - label=disable$/gm).length, 1); // jellyfin only; tracearr uses named volumes
 });
 
+test('jellyfin options are checked and given defaults', () => {
+  assert.deepEqual(normalize({ services: ['jellyfin'] }).jellyfin, { serverName: '', language: 'en', country: 'US' });
+  assert.deepEqual(normalize({ services: ['jellyfin'], jellyfin: { serverName: "Dave's Tube", language: 'de', country: 'DE' } }).jellyfin, { serverName: "Dave's Tube", language: 'de', country: 'DE' });
+  assert.throws(() => normalize({ services: ['jellyfin'], jellyfin: { serverName: '<script>' } }), /server name/);
+  assert.throws(() => normalize({ services: ['jellyfin'], jellyfin: { language: 'English' } }), /language/);
+  assert.equal(normalize({ services: ['sonarr'], jellyfin: { serverName: 'x' } }).jellyfin, undefined);
+});
+
 test('the plan has one step per app after the three shared ones', () => {
   const steps = planSteps(normalize({ services: ['sonarr', 'radarr'] }));
   assert.deepEqual(steps.map((s) => s.id), ['files', 'folders', 'up', 'sonarr', 'radarr']);

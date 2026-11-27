@@ -26,6 +26,7 @@ const state = {
   usenet: { host: '', port: 563, ssl: true, username: '', password: '', connections: 20 },
   indexers: [{ name: '', url: '', apiKey: '' }],
   plexClaim: '',
+  jellyfin: { serverName: '', language: 'en', country: 'US' },
   files: null,
   job: null,
 };
@@ -49,6 +50,7 @@ const payload = () => ({
   usenet: state.usenet,
   indexers: state.indexers,
   plexClaim: state.plexClaim,
+  jellyfin: state.jellyfin,
 });
 
 function showError(message) {
@@ -136,6 +138,16 @@ const field = (label, bind, { type = 'text', hint = '', wide = false, attrs = ''
     ${hint ? `<span class="hint">${hint}</span>` : ''}</label>`;
 };
 
+const LANGUAGES = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', pt: 'Portuguese', nl: 'Dutch', sv: 'Swedish', no: 'Norwegian', da: 'Danish', fi: 'Finnish', pl: 'Polish', ja: 'Japanese', ko: 'Korean', zh: 'Chinese' };
+const COUNTRIES = { US: 'United States', GB: 'United Kingdom', CA: 'Canada', AU: 'Australia', NZ: 'New Zealand', IE: 'Ireland', DE: 'Germany', FR: 'France', ES: 'Spain', IT: 'Italy', NL: 'Netherlands', SE: 'Sweden', NO: 'Norway', DK: 'Denmark', FI: 'Finland', PL: 'Poland', BR: 'Brazil', MX: 'Mexico', JP: 'Japan', KR: 'South Korea' };
+
+const select = (label, bind, options, hint = '') => {
+  const [group, key] = bind.split('.');
+  return `<label>${label}
+    <select data-bind="${bind}">${Object.entries(options).map(([v, name]) => `<option value="${v}" ${state[group][key] === v ? 'selected' : ''}>${name}</option>`).join('')}</select>
+    ${hint ? `<span class="hint">${hint}</span>` : ''}</label>`;
+};
+
 function viewSettings() {
   const loginFor = ['sonarr', 'radarr', 'prowlarr', 'sabnzbd', 'jellyfin'].filter(has).map((id) => app(id).name);
   return `
@@ -160,6 +172,12 @@ function viewSettings() {
       ${field('Password', 'admin.password', { type: 'password', hint: 'At least 8 characters', attrs: 'autocomplete="new-password"' })}
     </div>`, `Used for ${esc(loginFor.join(', '))}.`) : ''}
 
+    ${has('jellyfin') ? card('Jellyfin', `<div class="fields">
+      ${field('Server name', 'jellyfin.serverName', { wide: true, hint: 'What people see when they connect, for example "Dave\'s Tube". Leave blank to keep Jellyfin\'s default.' })}
+      ${select('Metadata language', 'jellyfin.language', LANGUAGES, 'For titles, descriptions and artwork.')}
+      ${select('Country', 'jellyfin.country', COUNTRIES, 'For release dates and age ratings.')}
+    </div>`, 'Applied along with the Movies and Shows libraries. Needs the login above.') : ''}
+
     ${has('sabnzbd') ? card('Usenet provider', `<div class="fields">
       ${field('Server', 'usenet.host', { hint: 'For example news.example.com' })}
       ${field('Port', 'usenet.port', { type: 'number' })}
@@ -174,7 +192,10 @@ function viewSettings() {
         <div class="indexer">
           <input type="text" aria-label="Indexer name" placeholder="Name" data-ix="${i}.name" value="${esc(ix.name)}">
           <input type="url" aria-label="Indexer address" placeholder="https://api.example.com" data-ix="${i}.url" value="${esc(ix.url)}">
-          <input type="text" aria-label="Indexer API key" placeholder="API key" data-ix="${i}.apiKey" value="${esc(ix.apiKey)}" autocomplete="off">
+          <span class="secret-field">
+            <input type="password" aria-label="Indexer API key" placeholder="API key" data-ix="${i}.apiKey" value="${esc(ix.apiKey)}" autocomplete="off" data-bwignore data-lpignore="true" data-1p-ignore>
+            <button type="button" data-reveal aria-label="Show API key">Show</button>
+          </span>
           <button type="button" class="btn small ghost" data-remove-ix="${i}">Remove</button>
         </div>`).join('')}
       <button type="button" class="btn small" data-add-ix>Add another indexer</button>
@@ -231,12 +252,15 @@ function download(name, textContent) {
   URL.revokeObjectURL(a.href);
 }
 
+// The server marks API keys in a note as [[secret:...]]; they stay hidden until asked for.
+const note = (text) => esc(text).replace(/\[\[secret:([^\]]+)\]\]/g, (_, key) => `<span class="secret" data-secret="${key}"><code>${'•'.repeat(12)}</code> <button type="button" data-show-secret>Show</button></span>`);
+
 // `linked` is false before deploy, when there is nothing to open yet.
 function todoList(items, linked = true) {
   return `<ul class="todo">${items.map((m) => {
     const s = app(m.service);
     const title = linked ? `<a href="http://${location.hostname}:${s.port}${m.path}" target="_blank" rel="noopener">${esc(m.title)}</a>` : `<strong>${esc(m.title)}</strong>`;
-    return `<li>${icon(s, true)}<div>${title}${m.notes.map((n) => `<p>${esc(n)}</p>`).join('')}</div></li>`;
+    return `<li>${icon(s, true)}<div>${title}${m.notes.map((n) => `<p>${note(n)}</p>`).join('')}</div></li>`;
   }).join('')}</ul>`;
 }
 
@@ -342,6 +366,21 @@ document.addEventListener('click', async (e) => {
   if (!t) return;
   if (t.dataset.app) return toggle(t.dataset.app);
   if ('browse' in t.dataset) return openBrowser();
+  if ('reveal' in t.dataset) {
+    const input = t.parentElement.querySelector('input');
+    const hidden = input.type === 'password';
+    input.type = hidden ? 'text' : 'password';
+    t.textContent = hidden ? 'Hide' : 'Show';
+    t.setAttribute('aria-label', hidden ? 'Hide API key' : 'Show API key');
+    return;
+  }
+  if ('showSecret' in t.dataset) {
+    const box = t.parentElement;
+    const hidden = t.textContent === 'Show';
+    box.querySelector('code').textContent = hidden ? box.dataset.secret : '•'.repeat(12);
+    t.textContent = hidden ? 'Hide' : 'Show';
+    return;
+  }
   if ('bGo' in t.dataset) return browseTo(t.dataset.bGo);
   if ('bCancel' in t.dataset) return $('#browser').close();
   if ('bUse' in t.dataset) {
