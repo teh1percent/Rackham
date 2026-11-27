@@ -8,12 +8,12 @@ uses each app's API to wire them together.
 
 ## Status
 
-Version 0.1. Deploy and auto-configure have been run for real (Fedora CoreOS
-based host, SELinux enforcing) for Sonarr, Radarr, Prowlarr, SABnzbd and
-Jellyfin, and the result was checked through each app's API.
+Version 0.1. Deploy and auto-configure have been run for real on a Fedora
+CoreOS based host with SELinux enforcing, under both root and rootless Docker,
+for Sonarr, Radarr, Prowlarr (with indexers), SABnzbd (with a usenet server)
+and Jellyfin. Tracearr, Seerr and Wizarr have been deployed and start.
 
-**Not yet run against real containers:** Plex claim and libraries, the usenet
-server and indexer settings, and Tracearr, Tautulli, Seerr and Wizarr.
+**Not yet run against real containers:** Plex claim and libraries, and Tautulli.
 
 On SELinux hosts the wizard turns container labelling off for apps that mount
 host folders (`security_opt: label=disable`), and the setup container itself
