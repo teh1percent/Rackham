@@ -1,0 +1,38 @@
+# Runs Rackham itself. Save this file on your server, then:
+#
+#   docker compose up -d --build
+#
+# and open http://<server>:8099
+#
+# Rackham writes the media stack (compose file, .env and app settings) into
+# STACK_DIR. To use a different folder, set STACK_DIR before starting, e.g.
+#
+#   STACK_DIR=/mnt/user/appdata/rackham docker compose up -d --build
+#
+# Rackham has no login and controls Docker: run it on a network you trust and
+# stop it when setup is done (docker compose down).
+
+name: rackham
+
+services:
+  rackham:
+    # Builds straight from GitHub, so this one file is all you need.
+    # If you cloned the repository, you can use "build: ." instead.
+    build: https://github.com/teh1percent/Rackham.git#main
+    image: rackham:latest
+    container_name: rackham
+    ports:
+      - "8099:8099"
+    environment:
+      STACK_DIR: ${STACK_DIR:-/opt/rackham}
+    volumes:
+      # Lets Rackham start and configure the apps.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Must be the same path on both sides: the stack Rackham writes uses
+      # paths that the host has to understand.
+      - ${STACK_DIR:-/opt/rackham}:${STACK_DIR:-/opt/rackham}
+    security_opt:
+      # Needed on SELinux hosts (Fedora, CoreOS, RHEL) to reach the Docker
+      # socket. Has no effect elsewhere.
+      - label=disable
+    restart: "no"

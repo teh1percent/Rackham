@@ -32,6 +32,18 @@ needs `--security-opt label=disable` to reach the Docker socket.
 
 ## Run it on the server (recommended)
 
+The quickest way is the included `compose.yaml`, which builds Rackham straight
+from this repository. Save that one file on the server and run:
+
+```bash
+docker compose up -d --build
+```
+
+Then open `http://<server>:8099`. The stack is written to `/opt/rackham` unless
+you set `STACK_DIR`. Stop Rackham with `docker compose down` when you're done.
+
+### Without the compose file
+
 Build the image, then start it with the Docker socket and a stack folder. The
 stack folder **must be mounted at the same path inside the container as on the
 host**, because the compose file it writes uses paths the host has to understand.
