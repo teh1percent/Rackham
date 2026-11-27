@@ -1,0 +1,12 @@
+{
+  "name": "rackham",
+  "version": "0.1.0",
+  "description": "Pick your media apps, deploy them with Docker Compose, and have them wired together for you.",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}

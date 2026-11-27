@@ -1,0 +1,3 @@
+# Written by a deploy: compose file, .env with API keys, and app settings
+stack/
+node_modules/

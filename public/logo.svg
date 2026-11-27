@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Rackham">
+  <!-- A Jolly Roger whose jaw is a stack of rack units, with one eye lit like a status light. -->
+  <rect width="512" height="512" rx="116" fill="#0b0e14"/>
+
+  <!-- crossed cutlasses -->
+  <g id="cutlass" fill="#7b8cff" stroke="#7b8cff" stroke-linecap="round">
+    <path d="M78 190 Q150 372 396 400 L388 430 Q116 418 78 190 Z" stroke="none"/>
+    <path d="M400 380 L384 446" stroke-width="16" fill="none"/>
+    <path d="M398 416 L442 428" stroke-width="24" fill="none"/>
+  </g>
+  <use href="#cutlass" transform="translate(512 0) scale(-1 1)"/>
+
+  <!-- skull: the dark outline lifts it off the blades -->
+  <g fill="#eef1f8" stroke="#0b0e14" stroke-width="16" stroke-linejoin="round" paint-order="stroke">
+    <path d="M256 66 C190 66 150 112 150 170 C150 204 164 228 190 244 L190 268 Q190 290 212 290 L300 290 Q322 290 322 268 L322 244 C348 228 362 204 362 170 C362 112 322 66 256 66 Z"/>
+    <rect x="184" y="302" width="144" height="28" rx="9"/>
+    <rect x="198" y="342" width="116" height="26" rx="9"/>
+  </g>
+  <!-- rack-unit lights on the jaw -->
+  <g fill="#0b0e14">
+    <circle cx="204" cy="316" r="5"/><rect x="262" y="312" width="50" height="8" rx="4"/>
+    <circle cx="217" cy="355" r="5"/><rect x="262" y="351" width="38" height="8" rx="4"/>
+  </g>
+
+  <!-- eyes and nose -->
+  <circle cx="214" cy="178" r="27" fill="#0b0e14"/>
+  <circle cx="298" cy="178" r="27" fill="#0b0e14"/>
+  <circle cx="298" cy="178" r="10" fill="#3ecf8e"/>
+  <path d="M256 220 L243 246 L269 246 Z" fill="#0b0e14" stroke="#0b0e14" stroke-width="6" stroke-linejoin="round"/>
+</svg>

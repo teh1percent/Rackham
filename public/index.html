@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Rackham</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img src="logo.svg" alt="" width="40" height="40">
+      <h1>Rackham <span>media stack setup</span></h1>
+    </div>
+    <ol id="steps" class="steps"></ol>
+  </header>
+
+  <div class="layout">
+    <main>
+      <div id="view" class="view"></div>
+      <p id="error" class="error" role="alert" hidden></p>
+    </main>
+
+    <aside class="rack" aria-label="Your stack">
+      <h2>Your stack</h2>
+      <ol id="rack" class="units"></ol>
+      <p id="rack-note" class="rack-note"></p>
+    </aside>
+  </div>
+
+  <footer class="bar"><div id="actions" class="actions"></div></footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
