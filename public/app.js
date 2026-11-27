@@ -273,6 +273,7 @@ function viewDeploy() {
         <span class="state">${STATE[s.status]}</span></li>`).join('')}
     </ol>`)}
     ${!j.running && up ? `
+      ${state.blocked?.length ? `<p class="notice">Your browser can't reach ${esc(state.blocked.map((s) => s.name).join(', '))}. The apps are running, so the server's firewall is most likely blocking them. Open ${state.blocked.length > 1 ? 'these TCP ports' : 'this TCP port'} on the server, then reload this page: <strong>${state.blocked.map((s) => s.port).join(', ')}</strong></p>` : ''}
       ${card('Open your apps', `<div class="links">${picked().map((s) => `<a href="http://${location.hostname}:${s.port}" target="_blank" rel="noopener">${icon(s, true)}${esc(s.name)}</a>`).join('')}</div>`)}
       ${j.manual.length ? card('Left for you', todoList(j.manual)) : ''}` : ''}`;
 }
@@ -301,12 +302,28 @@ function render() {
   $('#actions').innerHTML = a.length > 1 ? a.join('') : '';
 }
 
+// After a deploy, tries each app from this browser. Apps that are running on
+// the server but don't answer here are usually behind the server's firewall.
+async function checkReachable() {
+  const j = state.job;
+  if (!j || j.running || j.steps.find((s) => s.id === 'up')?.status !== 'done') return;
+  const tried = await Promise.all(picked().map(async (s) => {
+    try {
+      await fetch(`http://${location.hostname}:${s.port}/`, { mode: 'no-cors', cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      return null;
+    } catch { return s; }
+  }));
+  state.blocked = tried.filter(Boolean);
+  if (state.step === 3 && state.blocked.length) render();
+}
+
 async function poll() {
   while (state.job?.running) {
     await new Promise((r) => setTimeout(r, 1500));
     try { state.job = await api('/api/job'); } catch { continue; }
     if (state.step === 3) render();
   }
+  checkReachable();
 }
 
 const go = (step) => { state.step = step; render(); window.scrollTo(0, 0); };
@@ -317,7 +334,7 @@ const acts = {
   edit: () => go(1),
   review: async () => { state.files = await api('/api/files', payload()); go(2); },
   download: () => { download('docker-compose.yml', state.files.compose); download('.env', state.files.env); },
-  deploy: async () => { state.job = await api('/api/deploy', payload()); go(3); poll(); },
+  deploy: async () => { state.blocked = []; state.job = await api('/api/deploy', payload()); go(3); poll(); },
 };
 
 document.addEventListener('click', async (e) => {
